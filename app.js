@@ -1,13 +1,19 @@
 const STORAGE_KEY = "dreamanalytics.entries";
+const API_KEY_STORAGE = "dreamanalytics.api-key";
+const MODEL_STORAGE = "dreamanalytics.model";
+const DEFAULT_MODEL = "gpt-4o-mini";
 
 const dreamForm = document.getElementById("dream-form");
 const dreamList = document.getElementById("dream-list");
+const dreamMap = document.getElementById("dream-map");
 const dreamCountEl = document.getElementById("dream-count");
 const archetypeCountEl = document.getElementById("archetype-count");
 const moodLabelEl = document.getElementById("mood-label");
 const patternSummaryEl = document.getElementById("pattern-summary");
 const clearAllBtn = document.getElementById("clear-all");
 const seedDemoBtn = document.getElementById("seed-demo");
+const apiKeyInput = document.getElementById("api-key-input");
+const saveKeyBtn = document.getElementById("save-key");
 
 const today = new Date();
 const defaultDate = today.toISOString().split("T")[0];
@@ -29,16 +35,33 @@ function saveEntries(entries) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
 }
 
+function loadApiKey() {
+  return localStorage.getItem(API_KEY_STORAGE) || "";
+}
+
+function saveApiKey(value) {
+  if (!value) {
+    localStorage.removeItem(API_KEY_STORAGE);
+    return;
+  }
+
+  localStorage.setItem(API_KEY_STORAGE, value.trim());
+}
+
+function loadModel() {
+  return localStorage.getItem(MODEL_STORAGE) || DEFAULT_MODEL;
+}
+
 function buildArchetypes(entry) {
   const content = `${entry.title} ${entry.symbols} ${entry.narrative} ${entry.emotions}`.toLowerCase();
   const archetypes = [];
 
   const keywordMap = {
-    shadow: ["sombra", "miedo", "oscuro", "pesadilla", "persecucion", "enemigo", "monstruo", "caida", "ruido", "peligro", "terror", "náusea", "caza", "trampa"],
-    self: ["luz", "espejo", "mandala", "círculo", "integracion", "completo", "equilibrio", "camino", "montaña", "sabiduría", "sabio", "granito", "alma"],
-    transform: ["agua", "rio", "mar", "puerta", "transformacion", "cambio", "muda", "serpiente", "reptil", "metamorfosis", "vuelo", "despertar", "nacimiento", "renacer"],
-    persona: ["cara", "máscara", "rol", "trabajo", "reunion", "escena", "publico", "fama", "aparecer", "vestido", "social", "persona"],
-    anima: ["princesa", "reina", "mujer", "madre", "esposa", "sacerdotisa", "figura femenina", "anima", "misterio", "intuitivo", "suave", "sensibilidad"],
+    shadow: ["sombra", "miedo", "oscuro", "pesadilla", "persecucion", "enemigo", "monstruo", "caida", "ruido", "peligro", "terror", "náusea", "caza", "trampa", "oscuro", "sombrío"],
+    self: ["luz", "espejo", "mandala", "círculo", "integracion", "completo", "equilibrio", "camino", "montaña", "sabiduría", "sabio", "granito", "alma", "centro", "nucleo", "identidad"],
+    transform: ["agua", "rio", "mar", "puerta", "transformacion", "cambio", "muda", "serpiente", "reptil", "metamorfosis", "vuelo", "despertar", "nacimiento", "renacer", "volar", "subir", "caer"],
+    persona: ["cara", "máscara", "rol", "trabajo", "reunion", "escena", "publico", "fama", "aparecer", "vestido", "social", "persona", "profesión", "oficina"],
+    anima: ["princesa", "reina", "mujer", "madre", "esposa", "sacerdotisa", "figura femenina", "anima", "misterio", "intuitivo", "suave", "sensibilidad", "amor", "intimidad"],
   };
 
   Object.entries(keywordMap).forEach(([archetype, keywords]) => {
@@ -54,28 +77,30 @@ function buildArchetypes(entry) {
   return archetypes;
 }
 
-function buildInterpretation(entry) {
+function buildLocalInterpretation(entry) {
   const archetypes = buildArchetypes(entry);
   const emotionalTone = entry.mood || "equilibrado";
   const symbols = (entry.symbols || "símbolos").split(",").map((item) => item.trim()).filter(Boolean).slice(0, 4);
   const symbolText = symbols.length ? symbols.join(", ") : "imágenes recurrentes";
 
-  const archetypeText = archetypes.map((archetype) => {
-    switch (archetype) {
-      case "shadow":
-        return "la sombra, que emerge cuando lo reprimido trata de integrarse a la conciencia";
-      case "self":
-        return "el Self, que señala un centro de identidad más completo y unificador";
-      case "transform":
-        return "la transformación, en la que el cambio interno toma forma simbólica";
-      case "persona":
-        return "la persona, como la máscara social que a veces no coincide con lo más profundo";
-      case "anima":
-        return "la animus/anima, como fuerza de equilibrio entre lo consciente y lo inconsciente";
-      default:
-        return "la necesidad de unificación y comprensión";
-    }
-  }).join(" y ");
+  const archetypeText = archetypes
+    .map((archetype) => {
+      switch (archetype) {
+        case "shadow":
+          return "la sombra, que emerge cuando lo reprimido trata de integrarse a la conciencia";
+        case "self":
+          return "el Self, que señala un centro de identidad más completo y unificador";
+        case "transform":
+          return "la transformación, en la que el cambio interno toma forma simbólica";
+        case "persona":
+          return "la persona, como la máscara social que a veces no coincide con lo más profundo";
+        case "anima":
+          return "la animus/anima, como fuerza de equilibrio entre lo consciente y lo inconsciente";
+        default:
+          return "la necesidad de unificación y comprensión";
+      }
+    })
+    .join(" y ");
 
   return `Tu sueño refleja una experiencia emocional marcada por ${emotionalTone}. Los elementos más significativos —${symbolText}— parecen apuntar a ${archetypeText}. Desde una lectura junguiana, el sueño no solo narra un evento, sino que comunica un proceso de individuación: lo que está presente en la escena podría estar señalando un conflicto, una creatividad emergente o una parte de ti que busca reconocimiento. El mensaje central es que la conciencia está dialogando con lo inconsciente para producir significado, integración y crecimiento personal.`;
 }
@@ -118,6 +143,94 @@ function getDominantMood(entries) {
   return `${mood} (${count})`;
 }
 
+function renderDreamMap(entries) {
+  if (!entries.length) {
+    dreamMap.innerHTML = `<div class="empty-state">Tu mapa de sueños aparecerá cuando registres tu primer sueño.</div>`;
+    return;
+  }
+
+  const archetypeCounts = {};
+  entries.forEach((entry) => {
+    buildArchetypes(entry).forEach((type) => {
+      archetypeCounts[type] = (archetypeCounts[type] || 0) + 1;
+    });
+  });
+
+  const moodCounts = {};
+  entries.forEach((entry) => {
+    const mood = entry.mood || "tranquilo";
+    moodCounts[mood] = (moodCounts[mood] || 0) + 1;
+  });
+
+  const maxArchetype = Math.max(...Object.values(archetypeCounts), 1);
+  const archetypeRows = Object.entries(archetypeCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([type, count]) => {
+      const label = {
+        shadow: "Sombra",
+        self: "Self",
+        transform: "Transformación",
+        persona: "Persona",
+        anima: "Anima",
+      }[type] || type;
+
+      return `
+        <div class="bar-row">
+          <span>${label}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${(count / maxArchetype) * 100}%"></div></div>
+          <strong>${count}</strong>
+        </div>
+      `;
+    })
+    .join("");
+
+  const moodColors = {
+    tranquilo: "var(--chart-1)",
+    ansioso: "var(--chart-2)",
+    emocionado: "var(--chart-3)",
+    miedo: "var(--chart-4)",
+    alegria: "var(--chart-5)",
+    confuso: "#c084fc",
+  };
+
+  const moodEntries = Object.entries(moodCounts);
+  const totalMood = moodEntries.reduce((sum, [, count]) => sum + count, 0);
+  const moodSegments = [];
+  let cursor = 0;
+
+  moodEntries.forEach(([mood, count]) => {
+    const value = (count / totalMood) * 100;
+    const start = cursor;
+    const end = start + value;
+    moodSegments.push(`${moodColors[mood] || "#c084fc"} ${start}% ${end}%`);
+    cursor = end;
+  });
+
+  const legendMarkup = moodEntries
+    .map(([mood, count]) => `
+      <li>
+        <div><span class="dot" style="background:${moodColors[mood] || "#c084fc"};"></span>${capitaliza(mood)}</div>
+        <strong>${count}</strong>
+      </li>
+    `)
+    .join("");
+
+  dreamMap.innerHTML = `
+    <div class="chart-card">
+      <h3>Arquetipos</h3>
+      <div class="bar-list">
+        ${archetypeRows}
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h3>Emociones predominantes</h3>
+      <div class="mood-donut" style="background: conic-gradient(${moodSegments.join(", ")})"></div>
+      <ul class="mood-legend">${legendMarkup}</ul>
+    </div>
+  `;
+}
+
 function renderEntries() {
   const entries = loadEntries();
 
@@ -131,6 +244,8 @@ function renderEntries() {
     patternSummaryEl.appendChild(li);
   });
 
+  renderDreamMap(entries);
+
   if (!entries.length) {
     dreamList.innerHTML = `
       <div class="empty-state">
@@ -140,40 +255,69 @@ function renderEntries() {
     return;
   }
 
-  dreamList.innerHTML = entries.map((entry) => {
-    const archetypes = buildArchetypes(entry);
-    const chipMarkup = archetypes.map((type) => `<span class="chip ${type === "shadow" ? "shadow" : type === "self" ? "self" : type === "transform" ? "transform" : type === "persona" ? "persona" : "anima"}">${type}</span>`).join("");
+  dreamList.innerHTML = entries
+    .map((entry) => {
+      const archetypes = buildArchetypes(entry);
+      const chipMarkup = archetypes
+        .map(
+          (type) =>
+            `<span class="chip ${type === "shadow" ? "shadow" : type === "self" ? "self" : type === "transform" ? "transform" : type === "persona" ? "persona" : "anima"}">${type}</span>`
+        )
+        .join("");
 
-    return `
-      <article class="dream-card">
-        <div class="dream-header">
-          <div>
-            <h3 class="dream-title">${escapeHtml(entry.title)}</h3>
-            <div class="dream-date">${formatDate(entry.date)}</div>
-          </div>
-          <div class="chips">${chipMarkup}</div>
-        </div>
+      const aiText = entry.aiInterpretation || "";
+      const interpretationText = aiText || entry.interpretation || buildLocalInterpretation(entry);
 
-        <div class="meta-grid">
-          <div class="meta-box">
-            <span>Estado</span>
-            <strong>${escapeHtml(entry.mood)}</strong>
+      return `
+        <article class="dream-card">
+          <div class="dream-header">
+            <div>
+              <h3 class="dream-title">${escapeHtml(entry.title)}</h3>
+              <div class="dream-date">${formatDate(entry.date)}</div>
+            </div>
+            <div class="chips">${chipMarkup}</div>
           </div>
-          <div class="meta-box">
-            <span>Intensidad</span>
-            <strong>${escapeHtml(entry.intensity)}</strong>
-          </div>
-          <div class="meta-box">
-            <span>Tipo</span>
-            <strong>${escapeHtml(entry.wonderType)}</strong>
-          </div>
-        </div>
 
-        <p class="dream-story"><strong>Relato:</strong> ${escapeHtml(entry.narrative)}</p>
-        <p class="dream-analysis"><strong>Interpretación junguiana:</strong> ${escapeHtml(entry.interpretation)}</p>
-      </article>
-    `;
-  }).join("");
+          <div class="meta-grid">
+            <div class="meta-box">
+              <span>Estado</span>
+              <strong>${escapeHtml(entry.mood)}</strong>
+            </div>
+            <div class="meta-box">
+              <span>Intensidad</span>
+              <strong>${escapeHtml(entry.intensity)}</strong>
+            </div>
+            <div class="meta-box">
+              <span>Tipo</span>
+              <strong>${escapeHtml(entry.wonderType)}</strong>
+            </div>
+          </div>
+
+          <p class="dream-story"><strong>Relato:</strong> ${escapeHtml(entry.narrative)}</p>
+          <p class="dream-analysis"><strong>Interpretación:</strong> ${escapeHtml(interpretationText)}</p>
+          <div class="ai-actions">
+            <button class="ghost-btn retry-ai" data-id="${entry.id}" type="button">Reinterpretar con IA</button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+
+  document.querySelectorAll(".retry-ai").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const entries = loadEntries();
+      const target = entries.find((dream) => dream.id === button.dataset.id);
+      if (!target) return;
+
+      const updated = await resolveDreamInterpretation(target);
+      const nextEntries = entries.map((dream) =>
+        dream.id === target.id ? { ...dream, aiInterpretation: updated } : dream
+      );
+
+      saveEntries(nextEntries);
+      renderEntries();
+    });
+  });
 }
 
 function formatDate(value) {
@@ -190,7 +334,59 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 }
 
-dreamForm.addEventListener("submit", (event) => {
+function capitaliza(value) {
+  return String(value).charAt(0).toUpperCase() + String(value).slice(1);
+}
+
+async function resolveDreamInterpretation(entry) {
+  const apiKey = loadApiKey();
+
+  if (apiKey) {
+    try {
+      const aiText = await callOpenAI(entry, apiKey);
+      if (aiText) return aiText;
+    } catch (error) {
+      console.warn("La IA falló, se usa la interpretación local.", error);
+    }
+  }
+
+  return buildLocalInterpretation(entry);
+}
+
+async function callOpenAI(entry, apiKey) {
+  const model = loadModel();
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Eres un analista de sueños con enfoque junguiano. Responde en español, de forma clara, útil, respetuosa y no médica. Señala símbolos, arquetipos, emociones y posibles significados personales. No hagas diagnósticos clínicos."
+        },
+        {
+          role: "user",
+          content: `Analiza este sueño con enfoque junguiano. Título: ${entry.title}. Estado emocional: ${entry.mood}. Intensidad: ${entry.intensity}. Tipo: ${entry.wonderType}. Símbolos: ${entry.symbols}. Emociones: ${entry.emotions}. Relato: ${entry.narrative}. Genera 2 párrafos de interpretación útil y evocadora.`
+        }
+      ]
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data?.choices?.[0]?.message?.content?.trim() || "";
+}
+
+dreamForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const formData = new FormData(dreamForm);
@@ -207,8 +403,9 @@ dreamForm.addEventListener("submit", (event) => {
   };
 
   const entries = loadEntries();
-  entry.interpretation = buildInterpretation(entry);
-  entries.unshift(entry);
+  const interpretation = await resolveDreamInterpretation(entry);
+  const enrichedEntry = { ...entry, interpretation, aiInterpretation: (loadApiKey() ? interpretation : "") };
+  entries.unshift(enrichedEntry);
   saveEntries(entries);
   dreamForm.reset();
   document.getElementById("date").value = defaultDate;
@@ -236,10 +433,30 @@ seedDemoBtn.addEventListener("click", () => {
     narrative: "Soñé que caminaba sobre un lago que reflejaba una luna enorme. Había espejos en lugar de agua, y cada paso deformaba mi rostro. De pronto sentí que podía volar, pero también que alguien me perseguía desde el fondo del reflejo.",
   };
 
-  demoDream.interpretation = buildInterpretation(demoDream);
-  const entries = [demoDream, ...loadEntries()];
+  const entries = [
+    {
+      ...demoDream,
+      interpretation: buildLocalInterpretation(demoDream),
+      aiInterpretation: "",
+    },
+    ...loadEntries(),
+  ];
+
   saveEntries(entries);
   renderEntries();
 });
 
+saveKeyBtn.addEventListener("click", () => {
+  const value = apiKeyInput.value.trim();
+  saveApiKey(value);
+  apiKeyInput.value = value ? "********" : "";
+
+  if (value) {
+    alert("Clave guardada. En el próximo sueño o cuando reinterpretes, se usará IA si la API responde.");
+  } else {
+    alert("Se borró la clave guardada. La app volverá al modo local.");
+  }
+});
+
+apiKeyInput.value = loadApiKey() ? "********" : "";
 renderEntries();

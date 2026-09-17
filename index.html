@@ -130,6 +130,22 @@
         </aside>
       </main>
 
+      <section class="panel settings-panel">
+        <div class="section-heading">
+          <span class="badge alt">IA</span>
+          <h2>Interpretación con Inteligencia Artificial</h2>
+        </div>
+
+        <div class="api-key-box">
+          <label for="api-key-input">Clave API compatible con OpenAI</label>
+          <div class="api-row">
+            <input id="api-key-input" type="password" placeholder="sk-..." />
+            <button id="save-key" class="primary-btn" type="button">Guardar clave</button>
+          </div>
+          <p class="helper-text">Si no configuras una clave, la app usa una interpretación local basada en teoría junguiana. Si agregas una clave, se intentará interpretar cada sueño con IA.</p>
+        </div>
+      </section>
+
       <section class="panel analysis-panel">
         <div class="section-heading">
           <span class="badge alt">Interpretación</span>
@@ -137,6 +153,14 @@
         </div>
 
         <div id="dream-list" class="dream-list"></div>
+      </section>
+
+      <section class="panel map-panel">
+        <div class="section-heading">
+          <span class="badge">Mapa</span>
+          <h2>Mapa de sueños</h2>
+        </div>
+        <div id="dream-map" class="dream-map"></div>
       </section>
     </div>
 
