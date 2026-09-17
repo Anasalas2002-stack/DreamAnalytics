@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DreamAnalytics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Memoria onírica</p>
+          <h1>DreamAnalytics</h1>
+        </div>
+        <div class="topbar-actions">
+          <button id="seed-demo" class="ghost-btn" type="button">Cargar ejemplo</button>
+          <button id="clear-all" class="danger-btn" type="button">Borrar todo</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel form-panel">
+          <div class="section-heading">
+            <span class="badge">Registro diario</span>
+            <h2>Nuevo sueño</h2>
+          </div>
+
+          <form id="dream-form">
+            <div class="grid two-cols">
+              <label>
+                <span>Fecha</span>
+                <input type="date" name="date" id="date" required />
+              </label>
+
+              <label>
+                <span>Título del sueño</span>
+                <input type="text" name="title" id="title" placeholder="Ej: Vuelo sobre un lago oscuro" maxlength="80" required />
+              </label>
+            </div>
+
+            <div class="grid three-cols">
+              <label>
+                <span>Estado emocional</span>
+                <select name="mood" id="mood">
+                  <option value="tranquilo">Tranquilo</option>
+                  <option value="ansioso">Ansioso</option>
+                  <option value="emocionado">Emocionado</option>
+                  <option value="miedo">Con miedo</option>
+                  <option value="alegria">Con alegría</option>
+                  <option value="confuso">Confuso</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Intensidad</span>
+                <select name="intensity" id="intensity">
+                  <option value="leve">Leve</option>
+                  <option value="moderada">Moderada</option>
+                  <option value="alta">Alta</option>
+                  <option value="muy alta">Muy alta</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Tipo principal</span>
+                <select name="wonderType" id="wonderType">
+                  <option value="mítico">Mítico</option>
+                  <option value="emocional">Emocional</option>
+                  <option value="laboral">Laboral</option>
+                  <option value="relacional">Relacional</option>
+                  <option value="doméstico">Doméstico</option>
+                  <option value="espiritual">Espiritual</option>
+                  <option value="naturaleza">Naturaleza</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              <span>Símbolos o elementos clave</span>
+              <input type="text" name="symbols" id="symbols" placeholder="agua, espejo, montaña, serpiente, vuelo..." required />
+            </label>
+
+            <label>
+              <span>Emociones que sentiste</span>
+              <input type="text" name="emotions" id="emotions" placeholder="miedo, calma, nostalgia, deseo, culpa..." required />
+            </label>
+
+            <label>
+              <span>Relato del sueño</span>
+              <textarea name="narrative" id="narrative" rows="6" placeholder="Describe lo que ocurrió en el sueño, personas, lugares, acciones y sensaciones..." required></textarea>
+            </label>
+
+            <div class="form-actions">
+              <button type="submit" class="primary-btn">Guardar sueño</button>
+            </div>
+          </form>
+        </section>
+
+        <aside class="panel stats-panel">
+          <div class="section-heading compact">
+            <span class="badge alt">Insights</span>
+            <h2>Tu memoria</h2>
+          </div>
+
+          <div class="stats-grid">
+            <article>
+              <strong id="dream-count">0</strong>
+              <span>Sueños guardados</span>
+            </article>
+            <article>
+              <strong id="archetype-count">0</strong>
+              <span>Arquetipos recurrentes</span>
+            </article>
+            <article>
+              <strong id="mood-label">—</strong>
+              <span>Estado dominante</span>
+            </article>
+          </div>
+
+          <div class="insights-block">
+            <h3>Patrones de la semana</h3>
+            <ul id="pattern-summary" class="pattern-list">
+              <li>Registra tu primer sueño para activar la interpretación.</li>
+            </ul>
+          </div>
+        </aside>
+      </main>
+
+      <section class="panel analysis-panel">
+        <div class="section-heading">
+          <span class="badge alt">Interpretación</span>
+          <h2>Memoria y simbolismo</h2>
+        </div>
+
+        <div id="dream-list" class="dream-list"></div>
+      </section>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
